@@ -241,10 +241,84 @@ wait_for_pods() {
     }
 }
 
+# Function to check pod status in a namespace
+check_namespace_pods() {
+    local namespace="$1"
+    local errors=0
+    local crashlooping=()
+    local pending=()
+    local failed=()
+    local unknown=()
+
+    echo "Checking pods in namespace: ${namespace}"
+    
+    # Get all pods in the namespace
+    while IFS= read -r line; do
+        if [[ -n "$line" ]]; then
+            local name=$(echo "$line" | awk '{print $1}')
+            local ready=$(echo "$line" | awk '{print $2}')
+            local status=$(echo "$line" | awk '{print $3}')
+            local restarts=$(echo "$line" | awk '{print $4}')
+            local age=$(echo "$line" | awk '{print $5}')
+
+            case "$status" in
+                "CrashLoopBackOff")
+                    crashlooping+=("$name ($restarts restarts)")
+                    errors=$((errors + 1))
+                    ;;
+                "Pending")
+                    pending+=("$name")
+                    errors=$((errors + 1))
+                    ;;
+                "Failed")
+                    failed+=("$name")
+                    errors=$((errors + 1))
+                    ;;
+                "Unknown")
+                    unknown+=("$name")
+                    errors=$((errors + 1))
+                    ;;
+                "Running")
+                    if [[ "$ready" != *"/1" ]] && [[ "$ready" != "1/1" ]]; then
+                        pending+=("$name (Ready: $ready)")
+                        errors=$((errors + 1))
+                    fi
+                    ;;
+            esac
+        fi
+    done < <(kubectl get pods -n "$namespace" --no-headers 2>/dev/null)
+
+    # Report issues
+    if [ ${#crashlooping[@]} -gt 0 ]; then
+        echo "❌ CrashLoopBackOff pods:"
+        printf '  - %s\n' "${crashlooping[@]}"
+    fi
+    if [ ${#pending[@]} -gt 0 ]; then
+        echo "❌ Pending/Not Ready pods:"
+        printf '  - %s\n' "${pending[@]}"
+    fi
+    if [ ${#failed[@]} -gt 0 ]; then
+        echo "❌ Failed pods:"
+        printf '  - %s\n' "${failed[@]}"
+    fi
+    if [ ${#unknown[@]} -gt 0 ]; then
+        echo "❌ Unknown state pods:"
+        printf '  - %s\n' "${unknown[@]}"
+    fi
+
+    if [ $errors -eq 0 ]; then
+        echo "✅ All pods are running properly"
+        kubectl get pods -n "$namespace"
+    fi
+
+    return $errors
+}
+
 # Function to check cluster and component status
 check_status() {
     echo "Checking development environment status..."
     echo "----------------------------------------"
+    local total_errors=0
 
     # Check cluster status
     echo "1. Cluster Status:"
@@ -253,7 +327,23 @@ check_status() {
         
         # Check node status
         echo -e "\nNode Status:"
-        kubectl get nodes -o wide
+        local unhealthy_nodes=0
+        while IFS= read -r line; do
+            if [[ -n "$line" ]]; then
+                local name=$(echo "$line" | awk '{print $1}')
+                local status=$(echo "$line" | awk '{print $2}')
+                if [[ "$status" != "Ready" ]]; then
+                    echo "❌ Node $name is not ready (Status: $status)"
+                    unhealthy_nodes=$((unhealthy_nodes + 1))
+                fi
+            fi
+        done < <(kubectl get nodes --no-headers)
+
+        if [ $unhealthy_nodes -eq 0 ]; then
+            echo "✅ All nodes are healthy"
+            kubectl get nodes -o wide
+        fi
+        total_errors=$((total_errors + unhealthy_nodes))
     else
         echo "❌ Kind cluster '${CLUSTER_NAME}' is not running"
         return 1
@@ -298,11 +388,18 @@ check_status() {
         fi
     done
 
-    # Check pod status in each namespace
-    echo -e "\n5. Pod Status:"
+    # Enhanced pod status check
+    echo -e "\n5. Pod Status by Namespace:"
+    local namespaces=("${MONITORING_NAMESPACE}" "${OBSERVABILITY_NAMESPACE}" "${OTEL_DEMO_NAMESPACE}")
     for ns in "${namespaces[@]}"; do
-        echo -e "\nNamespace: ${ns}"
-        kubectl get pods -n "${ns}" -o wide
+        if kubectl get namespace "${ns}" &> /dev/null; then
+            echo -e "\nNamespace: ${ns}"
+            check_namespace_pods "${ns}"
+            total_errors=$((total_errors + $?))
+        else
+            echo "❌ Namespace ${ns} does not exist"
+            total_errors=$((total_errors + 1))
+        fi
     done
 
     # Check port forwards
@@ -326,7 +423,14 @@ check_status() {
     echo -e "\nPod Resource Usage (Top 10):"
     kubectl top pods -A --sort-by=cpu 2>/dev/null | head -n 10 || echo "❌ Metrics not available"
 
-    echo -e "\nDevelopment environment status check complete!"
+    echo -e "\nStatus Check Summary:"
+    if [ $total_errors -eq 0 ]; then
+        echo "✅ All components are healthy"
+    else
+        echo "❌ Found ${total_errors} issue(s) that need attention"
+    fi
+
+    return $total_errors
 }
 
 # Function to print usage
