@@ -1,0 +1,157 @@
+{
+    "perf_observation": "troubleshoot-2025031601",
+    "timestamp": "2025-03-16T01:15:00Z",
+    "environment": {
+        "cluster_type": "development",
+        "k8s_version": "1.28.5",
+        "node_count": 3,
+        "observability_stack": {
+            "jaeger_version": "1.47.0",
+            "otel_collector_version": "0.88.0",
+            "otel_demo_version": "0.11.0"
+        }
+    },
+    "context": {
+        "service": "otel-collector",
+        "namespace": "otel-demo",
+        "related_services": [
+            "jaeger-collector.observability",
+            "frontend",
+            "frontend-proxy"
+        ],
+        "duration": "2h",
+        "detection": "Manual observation of missing traces in Jaeger UI"
+    },
+    "metrics": {
+        "initial_state": {
+            "collector_pods": {
+                "ready": 0,
+                "total": 1,
+                "status": "CrashLoopBackOff"
+            },
+            "trace_metrics": {
+                "spans_received": 0,
+                "spans_exported": 0,
+                "export_failures": "N/A"
+            }
+        },
+        "final_state": {
+            "collector_pods": {
+                "ready": 1,
+                "total": 1,
+                "status": "Running"
+            },
+            "trace_metrics": {
+                "spans_received": "~1000/minute",
+                "spans_exported": "~1000/minute",
+                "export_failures": 0
+            }
+        }
+    },
+    "analysis": {
+        "root_cause": "Misconfigured OpenTelemetry Collector deployment and incorrect exporter configuration",
+        "evidence": [
+            "Collector pods in CrashLoopBackOff state",
+            "Missing configuration file in collector deployment",
+            "Incorrect exporter protocol (attempted Jaeger instead of OTLP)",
+            "Port forwarding conflicts preventing UI access"
+        ],
+        "contributing_factors": [
+            "Default collector configuration not suitable for external Jaeger",
+            "Port conflicts with existing services",
+            "Missing service account permissions",
+            "Incomplete documentation about collector configuration"
+        ],
+        "impact": {
+            "observability": {
+                "trace_visibility": "No traces visible in Jaeger",
+                "debugging_capability": "Severely limited",
+                "affected_services": "All services in otel-demo namespace"
+            },
+            "development": {
+                "time_lost": "2 hours",
+                "debugging_sessions": 3
+            }
+        }
+    },
+    "resolution": {
+        "immediate_actions": [
+            {
+                "action": "Create basic collector deployment",
+                "command": "kubectl create deployment otel-collector -n otel-demo --image=otel/opentelemetry-collector-contrib:0.88.0",
+                "effect": "Established base deployment"
+            },
+            {
+                "action": "Configure collector with ConfigMap",
+                "details": "Created ConfigMap with receivers, processors, and exporters",
+                "key_configurations": [
+                    "OTLP receiver on ports 4317/4318",
+                    "OTLP exporter pointing to Jaeger",
+                    "Batch processor for efficiency"
+                ]
+            }
+        ],
+        "configuration_changes": [
+            {
+                "type": "Collector Configuration",
+                "changes": [
+                    "Switched from Jaeger to OTLP exporter",
+                    "Added proper service endpoints",
+                    "Configured batch processing"
+                ]
+            },
+            {
+                "type": "Port Forwarding",
+                "changes": [
+                    "Created management script",
+                    "Implemented proper cleanup",
+                    "Used alternative ports to avoid conflicts"
+                ]
+            }
+        ],
+        "validation": {
+            "steps": [
+                "Verify collector pod running",
+                "Check Jaeger UI accessibility",
+                "Confirm trace flow in UI",
+                "Validate all services sending traces"
+            ],
+            "success_criteria": [
+                "Collector pod in Running state",
+                "Traces visible in Jaeger UI",
+                "No port forwarding conflicts",
+                "All demo services represented in traces"
+            ]
+        }
+    },
+    "prevention": {
+        "documentation_updates": [
+            "Document correct collector configuration",
+            "Add port forwarding best practices",
+            "Include troubleshooting guide"
+        ],
+        "process_improvements": [
+            "Create validation checklist for observability setup",
+            "Implement automated port forward management",
+            "Regular configuration validation"
+        ],
+        "monitoring_additions": [
+            "Collector health metrics",
+            "Trace flow monitoring",
+            "Port availability checking"
+        ]
+    },
+    "metadata": {
+        "label_type": "troubleshooting",
+        "severity": "medium",
+        "component_type": "observability",
+        "tags": [
+            "opentelemetry",
+            "jaeger",
+            "configuration",
+            "port-forwarding",
+            "collector",
+            "traces"
+        ]
+    }
+} 

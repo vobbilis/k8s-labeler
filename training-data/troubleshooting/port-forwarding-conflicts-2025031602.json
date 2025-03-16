@@ -1,0 +1,177 @@
+{
+    "perf_observation": "troubleshoot-2025031602",
+    "timestamp": "2025-03-16T02:30:00Z",
+    "environment": {
+        "cluster_type": "development",
+        "k8s_version": "1.28.5",
+        "node_count": 3,
+        "services_requiring_forwarding": [
+            {
+                "name": "grafana",
+                "port": 3001,
+                "original_port": 3000
+            },
+            {
+                "name": "jaeger-query",
+                "port": 30686,
+                "original_port": 16686
+            },
+            {
+                "name": "frontend",
+                "port": 8081,
+                "original_port": 8080
+            }
+        ]
+    },
+    "context": {
+        "issue": "Port forwarding conflicts and management",
+        "affected_services": [
+            "grafana",
+            "jaeger-query",
+            "frontend"
+        ],
+        "duration": "1h",
+        "detection": "Failed port forward attempts and connection refused errors"
+    },
+    "metrics": {
+        "initial_state": {
+            "port_forward_status": {
+                "successful": 0,
+                "failed": 3,
+                "error_types": [
+                    "address already in use",
+                    "connection refused",
+                    "unexpected EOF"
+                ]
+            },
+            "service_accessibility": {
+                "grafana": false,
+                "jaeger": false,
+                "frontend": false
+            }
+        },
+        "final_state": {
+            "port_forward_status": {
+                "successful": 3,
+                "failed": 0,
+                "error_types": []
+            },
+            "service_accessibility": {
+                "grafana": true,
+                "jaeger": true,
+                "frontend": true
+            }
+        }
+    },
+    "analysis": {
+        "root_cause": "Unmanaged port forward processes and port conflicts",
+        "evidence": [
+            "Multiple defunct kubectl port-forward processes",
+            "Ports already in use by previous sessions",
+            "No centralized port management",
+            "SSH tunneling conflicts"
+        ],
+        "contributing_factors": [
+            "Manual port forward management",
+            "Lack of process cleanup",
+            "Multiple development sessions",
+            "No standardized port allocation"
+        ],
+        "impact": {
+            "development": {
+                "time_lost": "1 hour",
+                "service_access": "Intermittent",
+                "debugging_capability": "Limited"
+            },
+            "team_productivity": {
+                "affected_developers": "All team members",
+                "common_issues": [
+                    "Unable to access UIs",
+                    "Inconsistent access",
+                    "Manual cleanup needed"
+                ]
+            }
+        }
+    },
+    "resolution": {
+        "immediate_actions": [
+            {
+                "action": "Kill existing port forwards",
+                "command": "pkill -f \"port-forward\"",
+                "effect": "Cleaned up zombie processes"
+            },
+            {
+                "action": "Create management script",
+                "details": "Created dev-cluster/scripts/manage-port-forwards.sh",
+                "features": [
+                    "Automatic cleanup of existing forwards",
+                    "Consistent port allocation",
+                    "Health checking",
+                    "Background process management"
+                ]
+            }
+        ],
+        "configuration_changes": [
+            {
+                "type": "Port Standardization",
+                "changes": [
+                    "Grafana: 3001",
+                    "Jaeger: 30686",
+                    "Frontend: 8081"
+                ]
+            },
+            {
+                "type": "SSH Tunnel Configuration",
+                "changes": [
+                    "Documented required tunnels",
+                    "Standardized local ports",
+                    "Added connection validation"
+                ]
+            }
+        ],
+        "validation": {
+            "steps": [
+                "Verify no existing port forwards",
+                "Start managed port forwards",
+                "Test service accessibility",
+                "Validate SSH tunneling"
+            ],
+            "success_criteria": [
+                "All services accessible",
+                "No port conflicts",
+                "Clean process management",
+                "Persistent access"
+            ]
+        }
+    },
+    "prevention": {
+        "documentation_updates": [
+            "Port forwarding guide",
+            "SSH tunnel setup instructions",
+            "Troubleshooting steps"
+        ],
+        "process_improvements": [
+            "Use port forward management script",
+            "Regular process cleanup",
+            "Standardized port allocation"
+        ],
+        "tooling_improvements": [
+            "Automated port availability checking",
+            "Health monitoring for forwards",
+            "Process cleanup automation"
+        ]
+    },
+    "metadata": {
+        "label_type": "troubleshooting",
+        "severity": "low",
+        "component_type": "development-tooling",
+        "tags": [
+            "port-forwarding",
+            "kubernetes",
+            "development-environment",
+            "tooling",
+            "automation",
+            "ssh-tunneling"
+        ]
+    }
+} 
