@@ -1,0 +1,1 @@
+default:\n  resources:\n    requests:\n      cpu: 100m\n      memory: 128Mi\n    limits:\n      cpu: 200m\n      memory: 256Mi\ncomponents:\n  redis:\n    enabled: true\n  jaeger:\n    enabled: false\n  prometheus:\n    enabled: false\n  grafana:\n    enabled: false

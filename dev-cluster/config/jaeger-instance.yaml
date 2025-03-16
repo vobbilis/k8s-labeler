@@ -1,0 +1,38 @@
+apiVersion: jaegertracing.io/v1
+kind: Jaeger
+metadata:
+  name: k8s-labeler-jaeger
+  namespace: observability
+spec:
+  strategy: allInOne
+  storage:
+    type: memory
+  ingress:
+    enabled: false
+  allInOne:
+    resources:
+      limits:
+        memory: 1Gi
+      requests:
+        memory: 512Mi
+  query:
+    serviceType: ClusterIP
+    options:
+      query:
+        base-path: /jaeger
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+  ui:
+    options:
+      dependencies:
+        menuEnabled: false
+      menu:
+      - label: About Jaeger
+        items:
+        - label: Documentation
+          url: https://www.jaegertracing.io/docs/latest 

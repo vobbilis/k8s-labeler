@@ -27,14 +27,15 @@ nodes:
     protocol: TCP
   kubeadmConfigPatches:
   - |
-    kind: InitConfiguration
-    nodeRegistration:
-      kubeletExtraArgs:
-        node-labels: "ingress-ready=true"
-        eviction-hard: "nodefs.available<5%,nodefs.inodesFree<5%,imagefs.available<5%"
+    kind: ClusterConfiguration
+    apiServer:
+      extraArgs:
+        enable-admission-plugins: NodeRestriction,MutatingAdmissionWebhook,ValidatingAdmissionWebhook
   extraMounts:
-  - hostPath: ${PROJECT_ROOT}/tmp
-    containerPath: /var/lib/containerd
+  - hostPath: ./dev-cluster/tmp
+    containerPath: /var/lib/k8s-labeler
+- role: worker
+- role: worker
 networking:
   apiServerAddress: "127.0.0.1"
   apiServerPort: 6443
