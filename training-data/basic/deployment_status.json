@@ -1,0 +1,45 @@
+{
+    "question": "What deployments are running and what is their current status?",
+    "category": "cluster_overview",
+    "answer": {
+        "command": "kubectl get deployments --all-namespaces",
+        "explanation": "This command shows all deployments across all namespaces, including their desired and current replicas, up-to-date status, and availability.",
+        "output_format": "table",
+        "output_columns": [
+            "NAMESPACE",
+            "NAME",
+            "READY",
+            "UP-TO-DATE",
+            "AVAILABLE",
+            "AGE"
+        ],
+        "interpretation": {
+            "namespace": "Namespace where the deployment is running",
+            "name": "Name of the deployment",
+            "ready": "Number of replicas ready out of desired (e.g., 3/3)",
+            "up_to_date": "Number of replicas updated to latest version",
+            "available": "Number of replicas available for use",
+            "age": "How long the deployment has been running"
+        },
+        "follow_up_command": "kubectl describe deployment <deployment-name> -n <namespace>",
+        "follow_up_explanation": "Shows detailed information about the deployment including strategy, template, and events",
+        "common_statuses": {
+            "READY": "All replicas are ready",
+            "UP-TO-DATE": "All replicas are at the latest version",
+            "AVAILABLE": "Replicas are available for use",
+            "ROLLING UPDATE": "Deployment is being updated"
+        },
+        "summary_example": "The cluster has 8 deployments across 4 namespaces. In the default namespace, there are 3 deployments: nginx-deployment (3/3 ready, 3 up-to-date, 3 available), api-deployment (2/2 ready, 2 up-to-date, 2 available), and worker-deployment (5/5 ready, 5 up-to-date, 5 available). The kube-system namespace contains 2 system deployments: coredns (2/2 ready, 2 up-to-date, 2 available) and kube-proxy (3/3 ready, 3 up-to-date, 3 available). The monitoring namespace has 2 deployments: prometheus (1/1 ready, 1 up-to-date, 1 available) and grafana (1/1 ready, 1 up-to-date, 1 available). The logging namespace contains 1 deployment: fluentd (1/1 ready, 1 up-to-date, 1 available). All deployments are healthy with their desired number of replicas running and up-to-date."
+    },
+    "related_commands": [
+        "kubectl rollout status deployment/<deployment-name> -n <namespace>",
+        "kubectl get replicasets -n <namespace>",
+        "kubectl rollout history deployment/<deployment-name> -n <namespace>"
+    ],
+    "difficulty_level": "basic",
+    "prerequisites": [
+        "Understanding of Kubernetes deployments",
+        "Access to kubectl",
+        "Cluster access permissions"
+    ]
+} 

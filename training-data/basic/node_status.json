@@ -1,0 +1,43 @@
+{
+    "question": "What is the status of all nodes in the cluster?",
+    "category": "cluster_overview",
+    "answer": {
+        "command": "kubectl get nodes",
+        "explanation": "This command shows the status of all nodes in the cluster, including their roles, status, age, and version information.",
+        "output_format": "table",
+        "output_columns": [
+            "NAME",
+            "STATUS",
+            "ROLES",
+            "AGE",
+            "VERSION"
+        ],
+        "interpretation": {
+            "name": "Name of the node",
+            "status": "Current state of the node (Ready, NotReady, etc.)",
+            "roles": "Node roles (control-plane, worker)",
+            "age": "How long the node has been in the cluster",
+            "version": "Kubernetes version running on the node"
+        },
+        "follow_up_command": "kubectl describe node <node-name>",
+        "follow_up_explanation": "Shows detailed information about the node including capacity, allocatable resources, and conditions",
+        "common_statuses": {
+            "Ready": "Node is healthy and ready to accept pods",
+            "NotReady": "Node is not ready to accept pods",
+            "SchedulingDisabled": "Node is not accepting new pods",
+            "Unknown": "Node status cannot be determined"
+        },
+        "summary_example": "The cluster has 3 nodes: control-plane-node (control-plane, Ready, v1.28.0), worker-node-1 (worker, Ready, v1.28.0), and worker-node-2 (worker, Ready, v1.28.0). All nodes are in Ready state and have been running for 5 days. The control-plane node is dedicated to cluster control plane operations, while the two worker nodes are available for running workloads. All nodes are running the same Kubernetes version (v1.28.0), indicating a consistent cluster environment."
+    },
+    "related_commands": [
+        "kubectl get nodes -o wide",
+        "kubectl top nodes",
+        "kubectl get nodes --show-labels"
+    ],
+    "difficulty_level": "basic",
+    "prerequisites": [
+        "Understanding of Kubernetes nodes",
+        "Access to kubectl",
+        "Cluster access permissions"
+    ]
+} 

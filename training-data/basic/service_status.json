@@ -1,0 +1,79 @@
+{
+    "question": "What services are running in the cluster and how are they exposed?",
+    "category": "cluster_overview",
+    "answer": {
+        "command": "kubectl get services --all-namespaces",
+        "explanation": "This command shows all services across all namespaces, including their type, cluster IP, external IP, and ports.",
+        "output_format": "table",
+        "output_columns": [
+            "NAMESPACE",
+            "NAME",
+            "TYPE",
+            "CLUSTER-IP",
+            "EXTERNAL-IP",
+            "PORT(S)",
+            "AGE"
+        ],
+        "interpretation": {
+            "namespace": "Namespace where the service is running",
+            "name": "Name of the service",
+            "type": "Service type (ClusterIP, NodePort, LoadBalancer, ExternalName)",
+            "cluster_ip": "Internal cluster IP address",
+            "external_ip": "External IP address (if applicable)",
+            "port(s)": "Port mapping (internal:external)",
+            "age": "How long the service has been running"
+        },
+        "service_types": {
+            "ClusterIP": "Internal cluster access only",
+            "NodePort": "Accessible via node IP and port",
+            "LoadBalancer": "Exposed via cloud provider load balancer",
+            "ExternalName": "Maps to external DNS name"
+        },
+        "follow_up_command": "kubectl describe service <service-name> -n <namespace>",
+        "follow_up_explanation": "Shows detailed information about the service including endpoints and selector",
+        "summary_example": "The cluster has 12 services across 4 namespaces. In the default namespace, there are 3 services: nginx-service (ClusterIP, 10.96.123.45, 80:80), api-gateway (NodePort, 10.96.234.56, 8080:30000), and database (ClusterIP, 10.96.345.67, 5432:5432). The kube-system namespace contains 4 system services including kube-dns (ClusterIP, 10.96.0.10, 53:53, 53:53/UDP) and metrics-server (ClusterIP, 10.96.456.78, 443:443). The monitoring namespace has 3 services: prometheus (ClusterIP, 10.96.567.89, 9090:9090), grafana (NodePort, 10.96.678.90, 3000:30001), and alertmanager (ClusterIP, 10.96.789.01, 9093:9093). The logging namespace contains 2 services: fluentd (ClusterIP, 10.96.890.12, 24224:24224) and elasticsearch (ClusterIP, 10.96.901.23, 9200:9200)."
+    },
+    "tool_call": {
+        "type": "kubectl",
+        "command": "get services --all-namespaces",
+        "parameters": {},
+        "output_processing": {
+            "success_criteria": "Command executes without error",
+            "error_handling": {
+                "no_kubectl": "Check if kubectl is installed and in PATH",
+                "no_cluster": "Verify cluster connection and context",
+                "no_permissions": "Check RBAC permissions"
+            },
+            "output_parsing": {
+                "method": "table",
+                "required_fields": ["NAMESPACE", "NAME", "TYPE", "CLUSTER-IP", "EXTERNAL-IP", "PORT(S)", "AGE"],
+                "data_extraction": {
+                    "services_by_namespace": "Group services by NAMESPACE",
+                    "services_by_type": "Group services by TYPE",
+                    "external_services": "Identify services with EXTERNAL-IP"
+                }
+            }
+        },
+        "follow_up_actions": {
+            "no_endpoints": {
+                "command": "kubectl get endpoints {service_name} -n {namespace}",
+                "trigger": "Service has no endpoints"
+            },
+            "loadbalancer_pending": {
+                "command": "kubectl describe service {service_name} -n {namespace}",
+                "trigger": "Service TYPE is LoadBalancer and EXTERNAL-IP is pending"
+            }
+        }
+    },
+    "related_commands": [
+        "kubectl get endpoints -n <namespace>",
+        "kubectl get pods -l <selector> -n <namespace>",
+        "kubectl port-forward service/<service-name> <local-port>:<service-port>"
+    ],
+    "difficulty_level": "basic",
+    "prerequisites": [
+        "Understanding of Kubernetes services",
+        "Access to kubectl",
+        "Cluster access permissions"
+    ]
+} 

@@ -1,0 +1,59 @@
+{
+    "question": "What persistent volumes and claims exist in the cluster?",
+    "category": "cluster_overview",
+    "answer": {
+        "command": "kubectl get pv,pvc --all-namespaces",
+        "explanation": "This command shows all PersistentVolumes (PVs) and PersistentVolumeClaims (PVCs) across all namespaces. PVs represent storage resources, while PVCs are requests for storage.",
+        "output_format": "table",
+        "pv_columns": [
+            "NAME",
+            "CAPACITY",
+            "ACCESS MODES",
+            "RECLAIM POLICY",
+            "STATUS",
+            "CLAIM",
+            "STORAGECLASS",
+            "REASON",
+            "AGE"
+        ],
+        "pvc_columns": [
+            "NAMESPACE",
+            "NAME",
+            "STATUS",
+            "VOLUME",
+            "CAPACITY",
+            "ACCESS MODES",
+            "STORAGECLASS",
+            "AGE"
+        ],
+        "interpretation": {
+            "pv": {
+                "capacity": "Total storage size",
+                "access_modes": "How the volume can be mounted (ReadWriteOnce, ReadOnlyMany, ReadWriteMany)",
+                "reclaim_policy": "What happens to the volume when the claim is deleted",
+                "status": "Current state of the volume",
+                "claim": "Namespace and name of the PVC using this PV",
+                "storageclass": "Storage class used to provision the volume"
+            },
+            "pvc": {
+                "status": "Current state of the claim",
+                "volume": "Name of the bound PV",
+                "capacity": "Requested storage size",
+                "access_modes": "Required access modes"
+            }
+        },
+        "follow_up_command": "kubectl describe pv <pv-name> && kubectl describe pvc <pvc-name> -n <namespace>",
+        "follow_up_explanation": "Shows detailed information about the PV or PVC including events and conditions"
+    },
+    "related_commands": [
+        "kubectl get storageclass",
+        "kubectl describe storageclass <name>",
+        "kubectl get pv,pvc -n <namespace>"
+    ],
+    "difficulty_level": "basic",
+    "prerequisites": [
+        "Understanding of Kubernetes storage concepts",
+        "Access to kubectl",
+        "Cluster access permissions"
+    ]
+} 

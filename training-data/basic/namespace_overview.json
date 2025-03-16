@@ -1,0 +1,40 @@
+{
+    "question": "What namespaces exist in the cluster and what resources are in each?",
+    "category": "namespace_overview",
+    "answer": {
+        "command": "kubectl get namespaces",
+        "explanation": "This command lists all namespaces in the cluster. To get detailed resource information for each namespace, use 'kubectl get all -n <namespace>'",
+        "output_format": "table",
+        "output_columns": [
+            "NAME",
+            "STATUS",
+            "AGE"
+        ],
+        "interpretation": {
+            "name": "Name of the namespace",
+            "status": "Current state of the namespace (Active, Terminating)",
+            "age": "How long the namespace has existed"
+        },
+        "follow_up_command": "kubectl get all -n <namespace>",
+        "follow_up_explanation": "Shows all resources (pods, services, deployments, etc.) in the specified namespace",
+        "common_resources": {
+            "pods": "Running containers",
+            "services": "Network endpoints",
+            "deployments": "Pod controllers",
+            "configmaps": "Configuration data",
+            "secrets": "Sensitive data"
+        },
+        "summary_example": "The cluster contains 6 namespaces: default, kube-system, kube-public, kube-node-lease, monitoring, and logging. The default namespace is Active and contains 3 deployments, 3 services, and 3 pods. The kube-system namespace is Active and contains 8 system components including CoreDNS, kube-proxy, and metrics-server. The monitoring namespace is Active and contains 3 pods for Prometheus and Grafana, along with their associated services and deployments. The logging namespace is Active and contains 1 Fluentd pod with its service. Both kube-public and kube-node-lease namespaces are Active but contain minimal resources as they are system namespaces."
+    },
+    "related_commands": [
+        "kubectl describe namespace <namespace>",
+        "kubectl get resourcequota -n <namespace>",
+        "kubectl get limitrange -n <namespace>"
+    ],
+    "difficulty_level": "basic",
+    "prerequisites": [
+        "Understanding of Kubernetes namespaces",
+        "Access to kubectl",
+        "Cluster access permissions"
+    ]
+} 

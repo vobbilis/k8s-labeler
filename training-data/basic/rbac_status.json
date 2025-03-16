@@ -1,0 +1,58 @@
+{
+    "question": "What service accounts and RBAC policies are configured in the cluster?",
+    "category": "cluster_overview",
+    "answer": {
+        "command": "kubectl get serviceaccounts,roles,rolebindings,clusterroles,clusterrolebindings --all-namespaces",
+        "explanation": "This command shows all ServiceAccounts and RBAC resources across all namespaces. ServiceAccounts provide identity for processes, while RBAC resources define permissions.",
+        "output_format": "table",
+        "serviceaccount_columns": [
+            "NAMESPACE",
+            "NAME",
+            "SECRETS",
+            "AGE"
+        ],
+        "role_columns": [
+            "NAMESPACE",
+            "NAME",
+            "AGE"
+        ],
+        "rolebinding_columns": [
+            "NAMESPACE",
+            "NAME",
+            "ROLE",
+            "AGE",
+            "USERS",
+            "GROUPS",
+            "SERVICE ACCOUNTS"
+        ],
+        "interpretation": {
+            "serviceaccount": {
+                "secrets": "Number of secrets associated with the service account",
+                "age": "How long the service account has existed"
+            },
+            "role": {
+                "namespace": "Namespace where the role applies",
+                "name": "Name of the role"
+            },
+            "rolebinding": {
+                "role": "Role or ClusterRole being bound",
+                "users": "User subjects",
+                "groups": "Group subjects",
+                "service_accounts": "Service account subjects"
+            }
+        },
+        "follow_up_command": "kubectl describe serviceaccount <name> -n <namespace> && kubectl describe role <name> -n <namespace>",
+        "follow_up_explanation": "Shows detailed information about the service account and role, including associated secrets and rules"
+    },
+    "related_commands": [
+        "kubectl auth can-i <verb> <resource>",
+        "kubectl get clusterroles",
+        "kubectl get clusterrolebindings"
+    ],
+    "difficulty_level": "basic",
+    "prerequisites": [
+        "Understanding of Kubernetes RBAC",
+        "Access to kubectl",
+        "Cluster access permissions"
+    ]
+} 

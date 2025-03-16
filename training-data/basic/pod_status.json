@@ -1,0 +1,157 @@
+{
+    "question": "What is the current state of all pods in the cluster?",
+    "category": "cluster_overview",
+    "answer": {
+        "command": "kubectl get pods --all-namespaces",
+        "explanation": "This command shows the status of all pods across all namespaces in the cluster. The output includes namespace, pod name, ready status, current status, restarts, and age.",
+        "output_format": "table",
+        "output_columns": [
+            "NAMESPACE",
+            "NAME",
+            "READY",
+            "STATUS",
+            "RESTARTS",
+            "AGE"
+        ],
+        "interpretation": {
+            "ready_status": "Shows how many containers are ready out of total containers (e.g., 1/1 means 1 container ready out of 1 total)",
+            "status": "Current state of the pod (Running, Pending, Error, etc.)",
+            "restarts": "Number of times the pod has been restarted",
+            "age": "How long the pod has been running"
+        },
+        "common_statuses": {
+            "Running": "Pod is running successfully",
+            "Pending": "Pod is waiting to be scheduled",
+            "ContainerCreating": "Pod is being created",
+            "Error": "Pod encountered an error",
+            "CrashLoopBackOff": "Pod is repeatedly crashing",
+            "ImagePullBackOff": "Failed to pull container image"
+        },
+        "troubleshooting_tips": [
+            "If status is Pending, check node resources and scheduling constraints",
+            "If status is Error or CrashLoopBackOff, check pod logs using 'kubectl logs <pod-name>'",
+            "If status is ImagePullBackOff, verify image name and registry access"
+        ],
+        "summary_example": "The cluster currently has 15 pods running across 4 namespaces. In the default namespace, there are 3 pods: nginx-deployment-5f4f8b7c6d-abc12 (Running, 1/1 ready), nginx-deployment-5f4f8b7c6d-def34 (Running, 1/1 ready), and nginx-deployment-5f4f8b7c6d-ghi56 (Running, 1/1 ready). In the kube-system namespace, there are 8 system pods including coredns, kube-proxy, and metrics-server, all in Running state. The monitoring namespace contains 3 pods for Prometheus and Grafana, all Running. Finally, the logging namespace has 1 pod for Fluentd in Running state. No pods are in error state or pending."
+    },
+    "tool_call": {
+        "type": "kubectl",
+        "command": "get pods --all-namespaces",
+        "parameters": {},
+        "context": {
+            "required": ["kubectl", "cluster_access"],
+            "optional": ["metrics_server"],
+            "environment_variables": {
+                "KUBECONFIG": "Path to kubeconfig file",
+                "KUBECTL_CONTEXT": "Kubernetes context to use"
+            }
+        },
+        "output_processing": {
+            "success_criteria": "Command executes without error",
+            "error_handling": {
+                "no_kubectl": {
+                    "check": "which kubectl",
+                    "solution": "Install kubectl and add to PATH"
+                },
+                "no_cluster": {
+                    "check": "kubectl cluster-info",
+                    "solution": "Configure kubeconfig and verify cluster connection"
+                },
+                "no_permissions": {
+                    "check": "kubectl auth can-i get pods --all-namespaces",
+                    "solution": "Update RBAC permissions or use appropriate context"
+                }
+            },
+            "output_parsing": {
+                "method": "table",
+                "required_fields": ["NAMESPACE", "NAME", "READY", "STATUS", "RESTARTS", "AGE"],
+                "data_extraction": {
+                    "pods_by_namespace": {
+                        "method": "group_by",
+                        "field": "NAMESPACE",
+                        "aggregation": "count"
+                    },
+                    "status_counts": {
+                        "method": "group_by",
+                        "field": "STATUS",
+                        "aggregation": "count"
+                    },
+                    "ready_counts": {
+                        "method": "group_by",
+                        "field": "READY",
+                        "aggregation": "count"
+                    }
+                },
+                "validation": {
+                    "required_statuses": ["Running", "Pending", "Error", "CrashLoopBackOff", "ImagePullBackOff"],
+                    "numeric_fields": ["RESTARTS"],
+                    "time_fields": ["AGE"]
+                }
+            }
+        },
+        "follow_up_actions": {
+            "error_states": {
+                "command": "kubectl describe pod {pod_name} -n {namespace}",
+                "trigger": "Pod STATUS is Error, CrashLoopBackOff, or ImagePullBackOff",
+                "variables": {
+                    "pod_name": "Extract from NAME column",
+                    "namespace": "Extract from NAMESPACE column"
+                },
+                "expected_output": {
+                    "format": "text",
+                    "key_fields": ["Events", "Conditions", "Status"]
+                }
+            },
+            "pending_states": {
+                "command": "kubectl describe node {node_name}",
+                "trigger": "Pod STATUS is Pending",
+                "variables": {
+                    "node_name": "Extract from NODE column or determine from pod events"
+                },
+                "expected_output": {
+                    "format": "text",
+                    "key_fields": ["Conditions", "Capacity", "Allocatable"]
+                }
+            }
+        },
+        "response_format": {
+            "success": {
+                "format": "json",
+                "structure": {
+                    "total_pods": "Count of all pods",
+                    "namespaces": {
+                        "namespace_name": {
+                            "pod_count": "Number of pods",
+                            "status_summary": "Count by status",
+                            "ready_summary": "Count by ready state"
+                        }
+                    },
+                    "health_status": {
+                        "healthy": "Count of running pods",
+                        "unhealthy": "Count of pods not running",
+                        "pending": "Count of pending pods"
+                    }
+                }
+            },
+            "error": {
+                "format": "json",
+                "structure": {
+                    "error_type": "Type of error encountered",
+                    "error_message": "Detailed error message",
+                    "suggested_action": "Recommended action to resolve"
+                }
+            }
+        }
+    },
+    "related_commands": [
+        "kubectl describe pod <pod-name> -n <namespace>",
+        "kubectl logs <pod-name> -n <namespace>",
+        "kubectl get events --sort-by='.lastTimestamp'"
+    ],
+    "difficulty_level": "basic",
+    "prerequisites": [
+        "Basic understanding of Kubernetes pods",
+        "Access to kubectl",
+        "Cluster access permissions"
+    ]
+} 

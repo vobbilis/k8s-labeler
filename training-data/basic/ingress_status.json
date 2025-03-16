@@ -1,0 +1,45 @@
+{
+    "question": "What ingress resources are configured in the cluster?",
+    "category": "cluster_overview",
+    "answer": {
+        "command": "kubectl get ingress --all-namespaces",
+        "explanation": "This command shows all Ingress resources across all namespaces. Ingress resources define rules for external access to services.",
+        "output_format": "table",
+        "output_columns": [
+            "NAMESPACE",
+            "NAME",
+            "CLASS",
+            "HOSTS",
+            "ADDRESS",
+            "PORTS",
+            "AGE"
+        ],
+        "interpretation": {
+            "namespace": "Namespace containing the ingress",
+            "name": "Name of the ingress resource",
+            "class": "Ingress class (e.g., nginx, traefik)",
+            "hosts": "Hostnames configured for the ingress",
+            "address": "External IP or hostname assigned to the ingress",
+            "ports": "Ports exposed by the ingress",
+            "age": "How long the ingress has existed"
+        },
+        "follow_up_command": "kubectl describe ingress <name> -n <namespace>",
+        "follow_up_explanation": "Shows detailed information about the ingress including rules, paths, and backend services",
+        "common_configurations": {
+            "host_based": "Routing based on hostname",
+            "path_based": "Routing based on URL path",
+            "tls": "TLS/SSL configuration"
+        }
+    },
+    "related_commands": [
+        "kubectl get ingressclass",
+        "kubectl describe ingressclass <name>",
+        "kubectl get ingress -n <namespace> -o yaml"
+    ],
+    "difficulty_level": "basic",
+    "prerequisites": [
+        "Understanding of Kubernetes Ingress",
+        "Access to kubectl",
+        "Cluster access permissions"
+    ]
+} 

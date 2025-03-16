@@ -1,0 +1,48 @@
+{
+    "question": "What is the current resource usage of pods and nodes?",
+    "category": "resource_utilization",
+    "answer": {
+        "command": "kubectl top pods --all-namespaces && kubectl top nodes",
+        "explanation": "This command shows CPU and memory usage for all pods and nodes in the cluster. Requires metrics-server to be installed.",
+        "output_format": "table",
+        "pod_columns": [
+            "NAMESPACE",
+            "NAME",
+            "CPU(cores)",
+            "MEMORY(bytes)"
+        ],
+        "node_columns": [
+            "NAME",
+            "CPU(cores)",
+            "CPU%",
+            "MEMORY(bytes)",
+            "MEMORY%"
+        ],
+        "interpretation": {
+            "pod_metrics": {
+                "cpu": "CPU usage in cores",
+                "memory": "Memory usage in bytes"
+            },
+            "node_metrics": {
+                "cpu": "Total CPU usage in cores",
+                "cpu_percent": "Percentage of CPU capacity used",
+                "memory": "Total memory usage in bytes",
+                "memory_percent": "Percentage of memory capacity used"
+            }
+        },
+        "follow_up_command": "kubectl describe node <node-name>",
+        "follow_up_explanation": "Shows detailed resource capacity and allocatable resources for the node"
+    },
+    "related_commands": [
+        "kubectl top pod <pod-name> -n <namespace>",
+        "kubectl describe node <node-name>",
+        "kubectl get resourcequota -n <namespace>"
+    ],
+    "difficulty_level": "basic",
+    "prerequisites": [
+        "Understanding of Kubernetes resource metrics",
+        "Metrics-server installed",
+        "Access to kubectl",
+        "Cluster access permissions"
+    ]
+} 

@@ -1,0 +1,42 @@
+{
+    "question": "What events have occurred in the cluster recently?",
+    "category": "cluster_overview",
+    "answer": {
+        "command": "kubectl get events --all-namespaces --sort-by='.lastTimestamp'",
+        "explanation": "This command shows recent events across all namespaces, sorted by timestamp. Events provide information about what's happening in the cluster.",
+        "output_format": "table",
+        "output_columns": [
+            "NAMESPACE",
+            "LAST SEEN",
+            "TYPE",
+            "REASON",
+            "OBJECT",
+            "MESSAGE"
+        ],
+        "interpretation": {
+            "namespace": "Namespace where the event occurred",
+            "last_seen": "When the event was last observed",
+            "type": "Event type (Normal, Warning)",
+            "reason": "Short reason for the event",
+            "object": "Object involved in the event",
+            "message": "Detailed description of the event"
+        },
+        "event_types": {
+            "Normal": "Expected behavior or successful operation",
+            "Warning": "Potential issue or error condition"
+        },
+        "follow_up_command": "kubectl describe <resource-type> <resource-name> -n <namespace>",
+        "follow_up_explanation": "Shows detailed information about the resource involved in the event"
+    },
+    "related_commands": [
+        "kubectl get events -n <namespace>",
+        "kubectl get events --field-selector type=Warning",
+        "kubectl get events --field-selector involvedObject.kind=Pod"
+    ],
+    "difficulty_level": "basic",
+    "prerequisites": [
+        "Understanding of Kubernetes events",
+        "Access to kubectl",
+        "Cluster access permissions"
+    ]
+} 
