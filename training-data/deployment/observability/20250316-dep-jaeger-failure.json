@@ -1,0 +1,186 @@
+{
+  "kind": "Label",
+  "apiVersion": "k8s-labeler.io/v1alpha1",
+  "metadata": {
+    "name": "jaeger_deployment_failure",
+    "namespace": "observability",
+    "labels": {
+      "type": "deployment",
+      "component": "jaeger",
+      "severity": "medium",
+      "category": "observability"
+    }
+  },
+  "spec": {
+    "issue": {
+      "title": "Jaeger Deployment Failure in Development Environment",
+      "description": "Deployment failure of Jaeger instances in Kubernetes development clusters, particularly when using operator-based deployment strategies. Manifests as pods in CrashLoopBackOff state despite operator being healthy.",
+      "impact": "Inability to collect and visualize distributed traces, affecting observability and debugging capabilities in the development environment."
+    },
+    "detection": {
+      "symptoms": [
+        "Jaeger pods stuck in CrashLoopBackOff state",
+        "Operator running successfully (2/2) but instance deployment fails",
+        "No clear error messages in pod logs",
+        "Services created but pods not stabilizing"
+      ],
+      "conditions": {
+        "pod_status": [
+          {
+            "condition": "Pod status is CrashLoopBackOff",
+            "duration": "5 minutes"
+          }
+        ],
+        "pod_restarts": [
+          {
+            "condition": "restart_count > 3",
+            "duration": "5 minutes"
+          }
+        ],
+        "deployment_status": [
+          {
+            "condition": "deployment_generation increasing",
+            "duration": "5 minutes"
+          }
+        ]
+      },
+      "evidence": {
+        "logs": [
+          {
+            "source": "Pod Events",
+            "pattern": "Back-off restarting failed container",
+            "context": "Indicates container startup failure"
+          },
+          {
+            "source": "Operator Logs",
+            "pattern": "Normal operation without errors",
+            "context": "Suggests configuration rather than operator issue"
+          }
+        ]
+      }
+    },
+    "diagnosis": {
+      "root_causes": [
+        "Complex operator configurations causing issues in dev environments",
+        "Mismatch between operator expectations and cluster capabilities",
+        "Resource configuration conflicts",
+        "Storage configuration incompatibility"
+      ],
+      "investigation": {
+        "commands": [
+          {
+            "description": "Check pod status",
+            "command": "kubectl get pods -n observability"
+          },
+          {
+            "description": "Check operator logs",
+            "command": "kubectl logs -n observability deployment/jaeger-operator"
+          },
+          {
+            "description": "Examine pod events",
+            "command": "kubectl describe pod -n observability <pod-name>"
+          }
+        ]
+      }
+    },
+    "remediation": {
+      "solution": {
+        "title": "Switch to Direct Helm Deployment for Development",
+        "steps": [
+          {
+            "order": 1,
+            "action": "Remove operator-based deployment",
+            "command": "kubectl delete jaeger -n observability k8s-labeler-jaeger\nkubectl delete -n observability deployment jaeger-operator"
+          },
+          {
+            "order": 2,
+            "action": "Add Jaeger Helm repository",
+            "command": "helm repo add jaegertracing https://jaegertracing.github.io/helm-charts\nhelm repo update"
+          },
+          {
+            "order": 3,
+            "action": "Deploy using Helm with minimal configuration",
+            "command": "helm install jaeger jaegertracing/jaeger \\\n  -n observability \\\n  -f values.yaml",
+            "config": {
+              "allInOne": {
+                "enabled": true,
+                "image": {
+                  "repository": "jaegertracing/all-in-one",
+                  "tag": "1.52.0"
+                },
+                "resources": {
+                  "limits": {
+                    "memory": "1Gi"
+                  },
+                  "requests": {
+                    "memory": "512Mi"
+                  }
+                }
+              },
+              "storage": {
+                "type": "memory"
+              }
+            }
+          }
+        ]
+      },
+      "verification": {
+        "steps": [
+          {
+            "order": 1,
+            "description": "Verify pod status",
+            "command": "kubectl get pods -n observability",
+            "expected_output": "jaeger-* 1/1 Running"
+          },
+          {
+            "order": 2,
+            "description": "Check services",
+            "command": "kubectl get svc -n observability",
+            "expected_output": "jaeger-query ClusterIP"
+          },
+          {
+            "order": 3,
+            "description": "Verify UI access",
+            "command": "kubectl port-forward -n observability svc/jaeger-query 16686:16686",
+            "validation": "UI accessible at http://localhost:16686"
+          }
+        ]
+      }
+    },
+    "prevention": {
+      "recommendations": [
+        "Use direct Helm deployment in development environments",
+        "Document working configurations for different environments",
+        "Maintain separate deployment strategies for dev and prod",
+        "Regular validation of operator health if using operator-based deployment"
+      ]
+    },
+    "related": {
+      "labels": [
+        {
+          "name": "operator_deployment_mismatch",
+          "relationship": "parent"
+        },
+        {
+          "name": "observability_stack_failure",
+          "relationship": "sibling"
+        },
+        {
+          "name": "development_environment_mismatch",
+          "relationship": "related"
+        }
+      ]
+    },
+    "metadata": {
+      "creation_date": "2025-03-16",
+      "last_updated": "2025-03-16",
+      "version": "1.0.0",
+      "contributors": [
+        {
+          "name": "k8s-labeler-team",
+          "email": "k8s-labeler@example.com"
+        }
+      ]
+    }
+  }
+} 

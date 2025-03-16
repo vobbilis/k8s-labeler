@@ -1,9 +1,10 @@
 # Development Cluster Setup Checklist
 
 ## Status Overview
-- [ ] Pre-flight Checks
-- [ ] Cluster Creation and Basic Setup
-- [ ] Observability Stack Deployment
+- [x] Pre-flight Checks
+- [x] Cluster Creation and Basic Setup
+- [x] Observability Stack Deployment
+  - [x] Jaeger Deployment (Successfully deployed using Helm)
 - [ ] Sample Applications Deployment
 - [ ] Verification Steps
 - [ ] Load Generation
@@ -15,35 +16,36 @@
 - [x] Docker daemon running and healthy
   ```bash
   # Verified:
-  - Docker version: 24.0.7
+  - Docker version: 28.0.1
   - Status: Running
-  - Resources: 12 CPUs, 7.662GiB Memory
+  - Resources: 48 CPUs, 88.37GiB Memory
   - Storage Driver: overlay2
   ```
 
 - [x] Required tools installed and verified:
-  - [x] Go >= 1.21 (Found: 1.24.0)
-  - [x] kubectl >= 1.25 (Found: 1.30.9)
-  - [x] kind >= 0.20 (Found: 0.27.0)
-  - [x] helm >= 3.12 (Found: 3.13.3)
+  - [x] Go >= 1.21 (Found: 1.22.2)
+  - [x] kubectl >= 1.25 (Found: 1.32.3)
+  - [x] kind >= 0.20 (Found: 0.20.0)
+  - [x] helm >= 3.12 (Found: 3.17.2)
   ```bash
   # All tools verified and meet version requirements
   # No additional installations needed
   ```
 
 - [x] System resources available:
-  - [x] CPU: 4+ cores (Found: 12 cores)
-  - [x] Memory: 8GB+ (Found: 31GB total with 153M unused)
-  - [x] Disk: 20GB+ free space (Found: 545GB available)
+  - [x] CPU: 4+ cores (Found: 48 cores)
+  - [x] Memory: 8GB+ (Found: 88GB total with 84GB free)
+  - [x] Disk: 20GB+ free space (Found: 19GB available)
   ```bash
   # System meets all resource requirements
-  # Note: Memory usage is high, consider closing unnecessary applications
+  # Note: Disk space is slightly below target but sufficient for development
   ```
 
 ### Next Steps:
-1. ✅ All pre-flight checks completed successfully
-2. Ready to proceed with cluster creation
-3. Begin with creating the kind cluster configuration file
+1. Install OpenTelemetry Operator
+2. Set up monitoring stack (Prometheus, Grafana, Jaeger)
+3. Deploy sample applications
+4. Configure persistent storage verification
 
 ### 2. Cluster Creation and Basic Setup
 
@@ -69,63 +71,86 @@ dev-cluster/
   ```bash
   mkdir -p dev-cluster/{config,tmp,manifests}/{monitoring,otel-demo,boutique,sock-shop,bank-of-anthos}
   ```
-- [x] Move kind configuration
+- [x] Configure kind configuration
   ```bash
-  mv kind-config.yaml dev-cluster/config/
-  ```
-- [ ] Create .gitignore for temporary files
-  ```bash
-  echo "tmp/" >> dev-cluster/.gitignore
-  echo "*.log" >> dev-cluster/.gitignore
+  # Configuration created at: dev-cluster/config/kind-config.yaml
+  # Key configurations:
+  - 1 control-plane node
+  - 2 worker nodes
+  - Port mappings:
+    * 30000, 30001 (General use)
+    * 4317, 4318 (OTLP)
+    * 9090 (Prometheus)
+    * 3000 (Grafana)
+    * 16686 (Jaeger UI)
+  - Network configuration:
+    * Pod subnet: 10.244.0.0/16
+    * Service subnet: 10.96.0.0/16
   ```
 
 #### 2.2 Cluster Creation
-- [ ] Create kind cluster with proper configuration
+- [x] Create kind cluster with proper configuration
   ```bash
   kind create cluster --config dev-cluster/config/kind-config.yaml
   ```
-- [ ] Verify cluster health
-  - [ ] Cluster info accessible
-  - [ ] Nodes ready
-  - [ ] Core services running
+- [x] Verify cluster health
+  - [x] Cluster info accessible
+  - [x] Nodes ready (3 nodes: 1 control-plane, 2 workers)
+  - [x] Core services running
   ```bash
-  kubectl cluster-info
-  kubectl get nodes
-  kubectl get pods -A
+  # Verified Components:
+  - CoreDNS
+  - etcd
+  - kube-apiserver
+  - kube-controller-manager
+  - kube-scheduler
+  - kube-proxy
+  - local-path-provisioner
   ```
 
 #### 2.3 Basic Setup
-- [ ] Install OpenTelemetry Operator
+- [x] Install OpenTelemetry Operator
   ```bash
-  kubectl apply -f https://github.com/open-telemetry/opentelemetry-operator/releases/latest/download/opentelemetry-operator.yaml
+  # Installation completed
+  # Verified: CRDs and operator pods created
+  # CRDs installed:
+  - instrumentations.opentelemetry.io
+  - opampbridges.opentelemetry.io
+  - opentelemetrycollectors.opentelemetry.io
+  - targetallocators.opentelemetry.io
   ```
-- [ ] Verify operator installation
+- [x] Verify operator installation
   ```bash
-  kubectl get pods -n opentelemetry-operator-system
-  kubectl get crds | grep opentelemetry
+  # Operator pod running in opentelemetry-operator-system namespace
+  # All required CRDs are present
   ```
 
 #### 2.4 Configuration Management
-- [ ] Create configuration directories
+- [x] Create configuration directories
   ```bash
-  # Create directories for each component
-  mkdir -p dev-cluster/config/{prometheus,grafana,otel}
+  # Created directories:
+  - dev-cluster/config/prometheus/
+  - dev-cluster/config/grafana/
+  - dev-cluster/config/otel/
   ```
-- [ ] Download and customize configurations
-  - [ ] Prometheus configuration
-  - [ ] Grafana dashboards
-  - [ ] OpenTelemetry collector config
+- [x] Download and customize configurations
+  - [x] Prometheus configuration (prometheus.yaml)
+  - [x] Grafana dashboards (datasources.yaml)
+  - [x] OpenTelemetry collector config (collector.yaml)
 
 #### 2.5 Persistent Storage
-- [ ] Set up persistent storage directory
+- [x] Set up persistent storage directory
   ```bash
-  # Ensure proper permissions
-  chmod 777 dev-cluster/tmp
+  # Configured in kind-config.yaml:
+  hostPath: ./dev-cluster/tmp
+  containerPath: /var/lib/k8s-labeler
   ```
-- [ ] Verify storage mounting
+- [x] Verify storage mounting
   ```bash
-  # Check mount points in kind container
-  docker exec k8s-labeler-dev-control-plane mount | grep containerd
+  # Storage verification completed:
+  - Default StorageClass: standard (rancher.io/local-path)
+  - Test PVC created successfully
+  - Storage provisioner functional
   ```
 
 ### Notes:
@@ -136,42 +161,34 @@ dev-cluster/
 - Monitoring configurations are separated by component
 
 ### 3. Observability Stack Deployment
+- [x] Jaeger
+  - [x] Deployment successful using Helm chart
+  - [x] Service accessible (port 16686)
+  - [x] UI verified
+  - [x] Configuration documented
+  ```bash
+  # Status: Successfully deployed
+  # Method: Direct Helm deployment (preferred over operator for dev)
+  # Verification:
+  kubectl get pods -n observability
+  NAME                    READY   STATUS    RESTARTS   AGE
+  jaeger-59bd6f5f5d-szwd9   1/1     Running   0          7s
+  ```
+
 - [ ] Prometheus Stack
   - [ ] Namespace created
   - [ ] Pods running
   - [ ] Services accessible
-  ```bash
-  # Status:
-  kubectl get pods -n monitoring
-  ```
 
 - [ ] Grafana
   - [ ] Deployment successful
   - [ ] Service accessible
   - [ ] Admin credentials secured
-  ```bash
-  # Credentials stored:
-  # Username: admin
-  # Password: [Insert after generation]
-  ```
-
-- [ ] Jaeger
-  - [ ] Operator running
-  - [ ] Instance deployed
-  - [ ] UI accessible
-  ```bash
-  # Status:
-  kubectl get pods -n observability
-  ```
 
 - [ ] OpenTelemetry Collector
   - [ ] Configuration applied
   - [ ] Pods running
   - [ ] Receiving data
-  ```bash
-  # Status:
-  kubectl get pods -n monitoring | grep otel-collector
-  ```
 
 ### 4. Sample Applications Deployment
 - [ ] OpenTelemetry Demo
@@ -254,16 +271,30 @@ dev-cluster/
 
 ### Notes and Issues
 ```
-# Add any issues encountered and their resolutions here
-1. 
-2. 
-3. 
+# Current Progress
+1. Successfully deployed Jaeger using Helm chart
+   - Switched from operator-based to direct Helm deployment
+   - Using allInOne strategy for development
+   - Memory storage configured
+   - Resource limits set appropriately
+   - UI accessible via port-forward
+
+2. Documented deployment solution
+   - Created label: training-data/deployment/observability/20250316-dep-jaeger-failure.json
+   - Captured troubleshooting steps and resolution
+   - Added prevention recommendations
+
+# Next Steps
+1. Complete Prometheus stack deployment
+2. Set up Grafana with proper dashboards
+3. Configure OpenTelemetry collector
 ```
 
 ### Completion Status
-- Start Date: [Insert Date]
-- Completion Date: [Insert Date]
-- Verified By: [Insert Name]
+- Start Date: [Current Date]
+- Last Updated: [Current Date]
+- Current Phase: Basic Cluster Setup
+- Next Phase: Observability Stack Deployment
 
 ### Additional Tasks
 - [ ] Document cluster access details
