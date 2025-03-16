@@ -62,20 +62,18 @@ K8s-Labeler observes your Kubernetes cluster in real-time and automatically gene
 
 2. **Set up development environment**:
    ```bash
-   # Make scripts executable
-   chmod +x dev-cluster/scripts/*.sh
-
-   # Start local development cluster
-   ./dev-cluster/scripts/start-cluster.sh
-
-   # Check cluster status
-   ./dev-cluster/scripts/cluster-status.sh
+   ./dev-cluster/scripts/setup-dev-environment.sh
    ```
+   This script will:
+   - Create a Kind cluster with proper configuration
+   - Deploy the observability stack (Prometheus, Grafana, Jaeger)
+   - Deploy the OpenTelemetry Demo application
+   - Set up port forwarding for UI access
 
 3. **Access Development Tools**:
-   - Grafana: http://localhost:3000
-   - Prometheus: http://localhost:9090
-   - Jaeger UI: http://localhost:16686
+   - Grafana: http://localhost:3001 (default credentials: admin/prom-operator)
+   - Jaeger UI: http://localhost:30686
+   - Frontend UI: http://localhost:8081
 
 ### Development Environment
 
