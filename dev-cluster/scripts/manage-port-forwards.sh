@@ -9,9 +9,15 @@ NC='\033[0m' # No Color
 # Port configurations
 declare -A services=(
     ["grafana"]="monitoring/svc/prometheus-grafana:3001:80"
-    ["jaeger"]="observability/pod/jaeger-59bd6f5f5d-szwd9:30686:16686"
+    ["jaeger"]="observability/pod/jaeger-7d866889b-cch75:30686:16686"
     ["frontend"]="otel-demo/svc/frontend-proxy:8081:8080"
+    ["boutique"]="boutique/svc/frontend-external:8082:80"
+    ["sock-shop"]="sock-shop/svc/front-end:8083:80"
+    ["bank-of-anthos"]="bank-of-anthos/svc/frontend:8084:80"
 )
+
+# Node IP for NodePort services
+NODE_IP="172.18.0.2"  # k8s-labeler-dev-worker where Jaeger is running
 
 check_port() {
     local port=$1
@@ -98,4 +104,7 @@ esac
 echo -e "\n${GREEN}Service endpoints:${NC}"
 echo -e "Grafana: http://localhost:3001"
 echo -e "Jaeger:  http://localhost:30686"
-echo -e "Frontend: http://localhost:8081" 
+echo -e "Frontend: http://localhost:8081"
+echo -e "Boutique: http://localhost:8082"
+echo -e "Sock Shop: http://localhost:8083"
+echo -e "Bank of Anthos: http://localhost:8084" 

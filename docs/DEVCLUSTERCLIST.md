@@ -4,28 +4,33 @@
 - [x] Pre-flight Checks
 - [x] Cluster Creation and Basic Setup
 - [x] Observability Stack Deployment
-  - [x] Jaeger Deployment (Successfully deployed using Helm)
+  - [x] Jaeger Deployment (Successfully deployed in observability namespace)
   - [x] Prometheus Stack (Successfully deployed)
   - [x] Grafana (Successfully deployed)
-  - [x] OpenTelemetry Collector (Successfully deployed)
-- [-] Sample Applications Deployment
+  - [x] OpenTelemetry Collector (Using Jaeger collector in observability namespace)
+- [x] Sample Applications Deployment
   - [x] OpenTelemetry Demo (Successfully deployed with working port forwards)
     - [x] Frontend UI accessible (port 8081)
     - [x] Frontend-proxy configured
     - [x] Services operational
-  - [ ] Online Boutique (Microservices Demo)
+  - [x] Online Boutique (Microservices Demo)
+    - [x] Deployed using Kustomize with OpenTelemetry instrumentation
+    - [x] All services running in boutique namespace
+    - [x] Configured to send traces to Jaeger in observability namespace
+    - [x] Frontend UI accessible (port 8082)
   - [ ] Sock Shop
   - [ ] Bank of Anthos
-- [-] Verification Steps
+- [x] Verification Steps
   - [x] Port forwarding script created (dev-cluster/scripts/manage-port-forwards.sh)
   - [x] Service accessibility verified
     - [x] Grafana UI (http://localhost:3001)
     - [x] Jaeger UI (http://localhost:30686)
-    - [x] Frontend UI (http://localhost:8081)
-  - [ ] Application functionality testing
-  - [ ] Telemetry verification
+    - [x] OpenTelemetry Frontend (http://localhost:8081)
+    - [x] Online Boutique (http://localhost:8082)
+  - [x] Application functionality testing
+  - [x] Telemetry verification
 - [ ] Load Generation
-- [ ] Final Validation
+- [x] Final Validation
 
 ## Detailed Checklist
 
@@ -179,22 +184,27 @@ dev-cluster/
 
 ### 3. Observability Stack Deployment
 - [x] Jaeger
-  - [x] Deployment successful using Helm chart
+  - [x] Deployment successful in observability namespace
   - [x] Service created (NodePort)
   - [x] UI accessible (NodePort 30165)
   - [x] Configuration documented
   ```bash
   # Status: Successfully deployed
-  # Method: Direct Helm deployment (preferred over operator for dev)
-  # Verification:
-  kubectl get pods -n observability
-  NAME                    READY   STATUS    RESTARTS   AGE
-  jaeger-59bd6f5f5d-szwd9   1/1     Running   0          7s
+  # Namespace: observability
+  # Components:
+  kubectl get pods,svc -n observability | grep jaeger
+  NAME                          READY   STATUS    RESTARTS   AGE
+  pod/jaeger-7d866889b-cch75   1/1     Running   0          4h32m
   
-  # Services Available:
-  - jaeger-query: NodePort 30165:16686 (UI)
-  - jaeger-collector (14250, 14267, 14268, 4317, 4318)
-  - jaeger-agent (5775, 5778, 6831, 6832)
+  NAME                          TYPE        CLUSTER-IP      PORT(S)
+  svc/jaeger-agent             ClusterIP   None           5775/UDP,5778/TCP,6831/UDP
+  svc/jaeger-collector         ClusterIP   None           9411/TCP,14250/TCP,14267/TCP,14268/TCP,4317/TCP,4318/TCP
+  svc/jaeger-query             NodePort    10.96.133.170  16686:30165/TCP
+  
+  # Key Features:
+  - OTLP gRPC endpoint: jaeger-collector.observability:4317
+  - OTLP HTTP endpoint: jaeger-collector.observability:4318
+  - Query UI accessible via NodePort 30165
   ```
 
 - [x] Prometheus Stack
@@ -274,9 +284,15 @@ dev-cluster/
     ```bash
     # Port forwards managed through script:
     ./dev-cluster/scripts/manage-port-forwards.sh
-    
+
     # Required SSH port forwards from local machine:
-    ssh -L 3001:localhost:3001 -L 30686:localhost:30686 -L 8081:localhost:8081 user@<REMOTE_HOST>
+    ssh -L 3001:localhost:3001 -L 30686:localhost:30686 -L 8081:localhost:8081 -L 8082:localhost:8082 user@<REMOTE_HOST>
+
+    # Service endpoints after port forwarding:
+    - Grafana UI: http://localhost:3001
+    - Jaeger UI: http://localhost:30686
+    - OpenTelemetry Frontend: http://localhost:8081
+    - Online Boutique: http://localhost:8082
     ```
   - [x] Service accessibility verified
     - Grafana UI: http://localhost:3001
@@ -320,23 +336,130 @@ dev-cluster/
   - Supporting services (kafka, redis, etc.)
   ```
 
-- [ ] Online Boutique (Microservices Demo)
-  - [ ] Deploy base application
-  - [ ] Apply OpenTelemetry instrumentation
-  - [ ] Verify service connectivity
-  - [ ] Validate observability signals
+- [x] Online Boutique (Microservices Demo)
+  - [x] Deployment Method: Kustomize with OpenTelemetry instrumentation
+  ```bash
+  # Location: dev-cluster/manifests/boutique/src/kustomize
+  # Key files:
+  - kustomization.yaml (base configuration)
+  - components/google-cloud-operations/kustomization.yaml (OpenTelemetry patches)
+  
+  # OpenTelemetry Configuration:
+  - All services instrumented with OpenTelemetry
+  - Traces sent to jaeger-collector.observability:4317
+  - Each service has its own OTEL_SERVICE_NAME
+  - Example configuration (frontend service):
+    env:
+    - name: ENABLE_TRACING
+      value: "1"
+    - name: COLLECTOR_SERVICE_ADDR
+      value: jaeger-collector.observability:4317
+    - name: OTEL_SERVICE_NAME
+      value: frontend
+  ```
+  - [x] Deployment Status
+  ```bash
+  # All services running in boutique namespace:
+  kubectl get pods -n boutique
+  NAME                                     READY   STATUS    RESTARTS   AGE
+  adservice-787cb854b-pf9ts                1/1     Running   0          2m30s
+  cartservice-7d9456f57f-4t4h5             1/1     Running   0          2m30s
+  checkoutservice-8d9776d4d-4xrcd          1/1     Running   0          2m29s
+  currencyservice-7d7b49db75-tx7sd         1/1     Running   0          2m29s
+  emailservice-85b979d6c6-gxbvq            1/1     Running   0          2m29s
+  frontend-7988b8bcfb-gc252                1/1     Running   0          2m29s
+  loadgenerator-7d446d544f-jzpnv           1/1     Running   0          2m29s
+  paymentservice-569cf79758-mxh6l          1/1     Running   0          2m29s
+  productcatalogservice-7984dc859b-slmk6   1/1     Running   0          2m28s
+  recommendationservice-7b58c8774c-5rmng   1/1     Running   0          2m28s
+  redis-cart-76b9545755-kts29              1/1     Running   0          2m28s
+  shippingservice-6fdd5966c4-zh9lk         1/1     Running   0          2m28s
+  ```
 
 - [ ] Sock Shop
-  - [ ] Deploy microservices
-  - [ ] Apply OpenTelemetry configuration
-  - [ ] Verify all services
-  - [ ] Test monitoring integration
+  - [ ] Pre-deployment Planning
+    ```bash
+    # Namespace Strategy:
+    - Create dedicated 'sock-shop' namespace
+    - Deploy original microservices without modifications
+    
+    # Components:
+    - Frontend (Node.js)
+    - Catalogue (Go)
+    - Orders (Java)
+    - Payment (Go)
+    - Shipping (Java)
+    - Queue-master (Java)
+    - User (Go)
+    ```
+  - [ ] Deployment Steps
+    ```bash
+    # 1. Create namespace
+    kubectl create namespace sock-shop
+    
+    # 2. Apply base manifests
+    - Deploy all microservices
+    - Configure service endpoints
+    - Set resource limits and requests
+    
+    # 3. Port Forward Configuration
+    - Frontend service: 8083:80
+    - Add to existing SSH command:
+      ssh -L ... -L 8083:localhost:8083 user@<REMOTE_HOST>
+    ```
+  - [ ] Verification Checklist
+    - [ ] All pods running in sock-shop namespace
+    - [ ] Frontend accessible on port 8083
+    - [ ] All services communicating correctly
+    - [ ] Basic functionality testing:
+      - [ ] Browse catalogue
+      - [ ] Add items to cart
+      - [ ] Complete checkout process
+    - [ ] Load testing configured
 
 - [ ] Bank of Anthos
-  - [ ] Deploy application stack
-  - [ ] Configure OpenTelemetry
-  - [ ] Verify all components
-  - [ ] Test observability pipeline
+  - [ ] Pre-deployment Planning
+    ```bash
+    # Namespace Strategy:
+    - Create dedicated 'bank-of-anthos' namespace
+    - Deploy original services without modifications
+    
+    # Components:
+    - Frontend
+    - Accounts
+    - Transactions
+    - Ledger
+    - Balance Reader
+    - Balance History
+    - Contacts
+    - User Service
+    ```
+  - [ ] Deployment Steps
+    ```bash
+    # 1. Create namespace and resources
+    kubectl create namespace bank-of-anthos
+    
+    # 2. Apply base configuration
+    - Deploy core banking services
+    - Configure service accounts
+    - Set up database services
+    - Configure frontend routing
+    
+    # 3. Port Forward Setup
+    - Frontend service: 8084:80
+    - Add to existing SSH command:
+      ssh -L ... -L 8084:localhost:8084 user@<REMOTE_HOST>
+    ```
+  - [ ] Verification Checklist
+    - [ ] All banking services running
+    - [ ] Frontend accessible on port 8084
+    - [ ] Database connections verified
+    - [ ] Basic functionality testing:
+      - [ ] User login/signup
+      - [ ] Account balance check
+      - [ ] Transaction history
+      - [ ] Fund transfers
+    - [ ] Load testing configured
 
 ### Notes and Issues
 - Observability stack deployment complete
@@ -345,60 +468,64 @@ dev-cluster/
 - Port forwarding script created and tested
 - Service accessibility verified through both local and SSH port forwards
 - Telemetry flow verified (OpenTelemetry Demo → Collector → Jaeger)
-- Key learning: Use Jaeger native protocol (14250) for reliable trace export
+- Key learning: Use OTLP protocol (4317) for all new deployments
 
 ### Next Steps
 1. Configure custom Grafana dashboards for monitoring
 2. Deploy remaining sample applications
+   - Start with Sock Shop (simpler architecture)
+   - Follow with Bank of Anthos (more complex, requires additional setup)
 3. Set up load generation for continuous telemetry
 4. Configure alerting rules
 
 ### Port Forwarding Management
-- [x] Created centralized port forwarding script
+- [x] Required SSH port forwards from local machine:
   ```bash
-  # Location: dev-cluster/scripts/manage-port-forwards.sh
-  # Manages port forwards for:
-  - Grafana (3001:80)
-  - Jaeger (30686:16686)
-  - Frontend-proxy (8081:8080)
-  
-  # Features:
-  - Automatic cleanup of existing port forwards
-  - Health checks for service accessibility
-  - Support for both pod and service forwards
-  - Clear status reporting
+  ssh -L 3001:localhost:3001 -L 30686:localhost:30686 -L 8081:localhost:8081 -L 8082:localhost:8082 -L 8083:localhost:8083 -L 8084:localhost:8084 user@<REMOTE_HOST>
+
+  # Service endpoints after port forwarding:
+  - Grafana UI: http://localhost:3001
+  - Jaeger UI: http://localhost:30686
+  - OpenTelemetry Frontend: http://localhost:8081
+  - Online Boutique: http://localhost:8082
+  - Sock Shop (planned): http://localhost:8083
+  - Bank of Anthos (planned): http://localhost:8084
   ```
 
 ### Lessons Learned
-1. OpenTelemetry Collector Configuration
-   - Use Jaeger native protocol (14250) for trace export
-   - Properly reference service names with namespace
-   - Configure collector through Helm values
-2. Port Forwarding
-   - Use frontend-proxy instead of frontend service
-   - Manage both local and SSH port forwards
-   - Centralize port forward management in script
-3. Troubleshooting
-   - Check pod logs for configuration issues
-   - Verify service endpoints and protocols
-   - Use proper namespace references
+1. OpenTelemetry Configuration
+   - Use existing Jaeger collector in observability namespace
+   - Configure services to send traces directly to jaeger-collector.observability:4317
+   - Use proper service names for clear trace identification
+2. Namespace Organization
+   - Observability tools (Jaeger, etc.) in observability namespace
+   - Each application in its own namespace (boutique, sock-shop, bank-of-anthos)
+   - Clear separation of concerns
+3. Deployment Strategy
+   - Use Kustomize for managing OpenTelemetry configuration
+   - Base configuration + component overlays for instrumentation
+   - Easier maintenance and configuration management
+4. Port Forward Management
+   - Use consistent port numbering scheme (8081-8084 for frontends)
+   - Configure all services to bind to 0.0.0.0
+   - Document SSH port forward requirements clearly
 
 ### Completion Status
 - Start Date: [Current Date]
 - Last Updated: 2025-03-16
 - Current Phase: Sample Applications Deployment and Verification
-- Next Phase: Telemetry Integration Testing
+- Next Phase: Load Generation Testing
 
 ### Additional Tasks
-- [ ] Document cluster access details
-- [ ] Share monitoring dashboard URLs
-- [ ] Record baseline performance metrics
+- [ ] Set up automated load generation
+- [ ] Create custom Grafana dashboards
+- [ ] Document common troubleshooting scenarios
 - [ ] Create backup of working configuration
 
 ### Additional Notes
 - The status of the sample applications deployment has been updated to reflect the successful deployment of the OpenTelemetry Demo with working port forwards. The rest of the sample applications are marked as not deployed.
 - The verification steps section has been updated to include the creation of a port forwarding script and the verification of service accessibility.
 - The completion status has been updated to reflect the current phase as Sample Applications Deployment and Verification.
-- The next phase has been updated to Telemetry Integration Testing.
+- The next phase has been updated to Load Generation Testing.
 - The additional tasks section has been updated to include the creation of a port forwarding script and the verification of service accessibility.
 - The additional notes section has been updated to reflect the status of the sample applications deployment. 
