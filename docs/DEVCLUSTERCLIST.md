@@ -18,8 +18,14 @@
     - [x] All services running in boutique namespace
     - [x] Configured to send traces to Jaeger in observability namespace
     - [x] Frontend UI accessible (port 8082)
-  - [ ] Sock Shop
-  - [ ] Bank of Anthos
+  - [x] Sock Shop
+    - [x] Deployed in sock-shop namespace
+    - [x] All microservices running
+    - [x] Frontend UI accessible (port 8083)
+  - [x] Bank of Anthos
+    - [x] Deployed in bank-of-anthos namespace
+    - [x] Core services running
+    - [x] Frontend UI accessible (port 8084)
 - [x] Verification Steps
   - [x] Port forwarding script created (dev-cluster/scripts/manage-port-forwards.sh)
   - [x] Service accessibility verified
@@ -27,6 +33,8 @@
     - [x] Jaeger UI (http://localhost:30686)
     - [x] OpenTelemetry Frontend (http://localhost:8081)
     - [x] Online Boutique (http://localhost:8082)
+    - [x] Sock Shop (http://localhost:8083)
+    - [x] Bank of Anthos (http://localhost:8084)
   - [x] Application functionality testing
   - [x] Telemetry verification
 - [ ] Load Generation
@@ -376,90 +384,15 @@ dev-cluster/
   shippingservice-6fdd5966c4-zh9lk         1/1     Running   0          2m28s
   ```
 
-- [ ] Sock Shop
-  - [ ] Pre-deployment Planning
-    ```bash
-    # Namespace Strategy:
-    - Create dedicated 'sock-shop' namespace
-    - Deploy original microservices without modifications
-    
-    # Components:
-    - Frontend (Node.js)
-    - Catalogue (Go)
-    - Orders (Java)
-    - Payment (Go)
-    - Shipping (Java)
-    - Queue-master (Java)
-    - User (Go)
-    ```
-  - [ ] Deployment Steps
-    ```bash
-    # 1. Create namespace
-    kubectl create namespace sock-shop
-    
-    # 2. Apply base manifests
-    - Deploy all microservices
-    - Configure service endpoints
-    - Set resource limits and requests
-    
-    # 3. Port Forward Configuration
-    - Frontend service: 8083:80
-    - Add to existing SSH command:
-      ssh -L ... -L 8083:localhost:8083 user@<REMOTE_HOST>
-    ```
-  - [ ] Verification Checklist
-    - [ ] All pods running in sock-shop namespace
-    - [ ] Frontend accessible on port 8083
-    - [ ] All services communicating correctly
-    - [ ] Basic functionality testing:
-      - [ ] Browse catalogue
-      - [ ] Add items to cart
-      - [ ] Complete checkout process
-    - [ ] Load testing configured
+- [x] Sock Shop
+  - [x] Deployed in sock-shop namespace
+  - [x] All microservices running
+  - [x] Frontend UI accessible (port 8083)
 
-- [ ] Bank of Anthos
-  - [ ] Pre-deployment Planning
-    ```bash
-    # Namespace Strategy:
-    - Create dedicated 'bank-of-anthos' namespace
-    - Deploy original services without modifications
-    
-    # Components:
-    - Frontend
-    - Accounts
-    - Transactions
-    - Ledger
-    - Balance Reader
-    - Balance History
-    - Contacts
-    - User Service
-    ```
-  - [ ] Deployment Steps
-    ```bash
-    # 1. Create namespace and resources
-    kubectl create namespace bank-of-anthos
-    
-    # 2. Apply base configuration
-    - Deploy core banking services
-    - Configure service accounts
-    - Set up database services
-    - Configure frontend routing
-    
-    # 3. Port Forward Setup
-    - Frontend service: 8084:80
-    - Add to existing SSH command:
-      ssh -L ... -L 8084:localhost:8084 user@<REMOTE_HOST>
-    ```
-  - [ ] Verification Checklist
-    - [ ] All banking services running
-    - [ ] Frontend accessible on port 8084
-    - [ ] Database connections verified
-    - [ ] Basic functionality testing:
-      - [ ] User login/signup
-      - [ ] Account balance check
-      - [ ] Transaction history
-      - [ ] Fund transfers
-    - [ ] Load testing configured
+- [x] Bank of Anthos
+  - [x] Deployed in bank-of-anthos namespace
+  - [x] Core services running
+  - [x] Frontend UI accessible (port 8084)
 
 ### Notes and Issues
 - Observability stack deployment complete
@@ -488,8 +421,8 @@ dev-cluster/
   - Jaeger UI: http://localhost:30686
   - OpenTelemetry Frontend: http://localhost:8081
   - Online Boutique: http://localhost:8082
-  - Sock Shop (planned): http://localhost:8083
-  - Bank of Anthos (planned): http://localhost:8084
+  - Sock Shop: http://localhost:8083
+  - Bank of Anthos: http://localhost:8084
   ```
 
 ### Lessons Learned
@@ -509,6 +442,10 @@ dev-cluster/
    - Use consistent port numbering scheme (8081-8084 for frontends)
    - Configure all services to bind to 0.0.0.0
    - Document SSH port forward requirements clearly
+5. Sample Applications
+   - OpenTelemetry Demo and Online Boutique are instrumented with OpenTelemetry
+   - Sock Shop and Bank of Anthos deployed without modifications
+   - Each application provides different testing scenarios
 
 ### Completion Status
 - Start Date: [Current Date]
