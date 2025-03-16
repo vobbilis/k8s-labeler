@@ -1,1 +1,35 @@
-default:\n  resources:\n    requests:\n      cpu: 100m\n      memory: 128Mi\n    limits:\n      cpu: 200m\n      memory: 256Mi\ncomponents:\n  redis:\n    enabled: true\n  jaeger:\n    enabled: false\n  prometheus:\n    enabled: false\n  grafana:\n    enabled: false
+# Default resource settings for all components
+default:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# Component configuration
+components:
+  # Disable built-in components as we use external ones
+  redis:
+    enabled: true
+  jaeger:
+    enabled: false  # Using external Jaeger
+  prometheus:
+    enabled: false  # Using external Prometheus
+  grafana:
+    enabled: false  # Using external Grafana
+
+# OpenTelemetry Collector configuration
+opentelemetry-collector:
+  config:
+    exporters:
+      otlp:
+        endpoint: jaeger-collector.observability:4317
+        tls:
+          insecure: true  # Disabled for development
+
+# Service account configuration
+serviceAccount:
+  create: true

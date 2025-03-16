@@ -284,19 +284,20 @@ dev-cluster/
     - Frontend UI: http://localhost:8081
   - [x] Configure with existing collector
     ```bash
-    # Successfully configured OpenTelemetry Demo to send traces to external Jaeger
+    # Successfully configured OpenTelemetry Demo to send traces to external Jaeger via OTLP
     # Key configuration:
     helm install otel-demo open-telemetry/opentelemetry-demo \
       --namespace otel-demo \
       --create-namespace \
       --set default.replicas=1 \
       --set serviceAccount.create=true \
-      --set opentelemetry-collector.config.exporters.jaeger.endpoint=jaeger-collector.observability:14250
+      --set opentelemetry-collector.config.exporters.otlp.endpoint=jaeger-collector.observability:4317 \
+      --set opentelemetry-collector.config.exporters.otlp.tls.insecure=true
 
     # Important Notes:
-    # 1. Using Jaeger native protocol (port 14250) instead of OTLP (4317)
-    # 2. Correct service namespace in endpoint (jaeger-collector.observability)
-    # 3. Frontend-proxy used for UI access instead of direct frontend service
+    # 1. Using OTLP protocol (port 4317) instead of legacy Jaeger protocol
+    # 2. TLS is disabled for development environment
+    # 3. Correct service namespace in endpoint (jaeger-collector.observability)
     ```
   - [x] Validate telemetry data flow
     - [x] Traces visible in Jaeger UI
