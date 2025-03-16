@@ -1,0 +1,82 @@
+{
+    "mesh_observation": "mesh-2025031503",
+    "question": "Why did the Jaeger instance fail to create after operator installation?",
+    "mesh_context": {
+        "operator": "jaeger-operator",
+        "namespace": "observability",
+        "timestamp": "2025-03-15T23:45:00Z",
+        "version": "1.47.0"
+    },
+    "analysis": {
+        "root_cause": [
+            "CRD installation timing issue",
+            "Strategy-Storage mismatch",
+            "UI static assets initialization failure",
+            "Base-path configuration conflict"
+        ],
+        "evidence": [
+            "Error: resource mapping not found for kind Jaeger in version jaegertracing.io/v1",
+            "CrashLoopBackOff with production strategy and memory storage",
+            "panic: Could not create static assets handler",
+            "Multiple base-path definitions causing static assets handler failure"
+        ],
+        "resolution": {
+            "required_steps": [
+                "Wait for operator pod to be fully running",
+                "Verify CRDs are installed",
+                "Ensure storage type matches deployment strategy",
+                "Configure UI and query components explicitly",
+                "Set correct static files path",
+                "Avoid duplicate base-path configurations",
+                "Apply Jaeger instance with correct configuration"
+            ],
+            "correct_sequence": [
+                "Ensure 30s delay between operator and instance creation",
+                "Use allInOne strategy with memory storage, or production strategy with persistent storage",
+                "Configure single base-path under allInOne.options.query",
+                "Set static-files path to /etc/jaeger/query/static"
+            ],
+            "configuration_rules": {
+                "memory_storage": "Must use allInOne strategy",
+                "production_strategy": "Requires persistent storage (e.g., Elasticsearch)",
+                "ui_configuration": {
+                    "required_fields": [
+                        "allInOne.options.query.base-path",
+                        "allInOne.options.query.static-files",
+                        "ui.options"
+                    ],
+                    "recommended_settings": {
+                        "memory.max-traces": 100000,
+                        "resources.limits.memory": "1Gi",
+                        "resources.requests.memory": "512Mi",
+                        "base_path": "/",
+                        "static_files": "/etc/jaeger/query/static"
+                    },
+                    "conflicts_to_avoid": [
+                        "Multiple base-path definitions",
+                        "Missing static-files path",
+                        "Incorrect static files location"
+                    ]
+                }
+            }
+        }
+    },
+    "metadata": {
+        "label_type": "mesh",
+        "severity": "medium",
+        "component_type": "tracing",
+        "environment": "development",
+        "tags": [
+            "jaeger",
+            "operator",
+            "crd",
+            "timing",
+            "observability",
+            "storage",
+            "configuration",
+            "ui",
+            "static-assets",
+            "base-path"
+        ]
+    }
+} 

@@ -20,6 +20,12 @@ components:
     enabled: false  # Using external Prometheus
   grafana:
     enabled: false  # Using external Grafana
+  frontendProxy:
+    resources:
+      limits:
+        memory: 256Mi
+      requests:
+        memory: 128Mi
 
 # OpenTelemetry Collector configuration
 opentelemetry-collector:

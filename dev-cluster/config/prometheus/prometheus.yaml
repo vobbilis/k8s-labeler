@@ -1,0 +1,24 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: k8s-labeler-prometheus
+  namespace: monitoring
+spec:
+  serviceAccountName: prometheus
+  serviceMonitorSelector:
+    matchLabels:
+      app: k8s-labeler
+  resources:
+    requests:
+      memory: 400Mi
+      cpu: 200m
+    limits:
+      memory: 800Mi
+      cpu: 500m
+  storage:
+    volumeClaimTemplate:
+      spec:
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 10Gi 

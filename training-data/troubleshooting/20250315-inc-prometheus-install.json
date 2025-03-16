@@ -1,0 +1,35 @@
+{
+    "incident_id": "inc-2025031502",
+    "question": "Why did the initial Prometheus stack installation fail?",
+    "analysis": {
+        "symptoms": [
+            "Helm install command failed",
+            "Release prometheus has been cancelled",
+            "Context canceled error"
+        ],
+        "root_cause": "Helm installation timeout or interruption during SSH connection loss",
+        "evidence": {
+            "logs": [
+                "Error: INSTALLATION FAILED: cannot re-use a name that is still in use",
+                "release prometheus has been cancelled"
+            ]
+        },
+        "resolution": {
+            "steps": [
+                "Uninstall existing failed release",
+                "Reinstall with --wait flag",
+                "Verify all components are running"
+            ],
+            "verification": "All Prometheus stack components running after cleanup and reinstall"
+        }
+    },
+    "metadata": {
+        "namespace": "monitoring",
+        "timestamp": "2025-03-15T23:40:00Z",
+        "label_type": "troubleshooting",
+        "severity": "medium",
+        "component_type": "monitoring",
+        "environment": "development",
+        "tags": ["prometheus", "helm", "installation", "monitoring", "connection-loss"]
+    }
+} 

@@ -1,0 +1,181 @@
+{
+    "perf_observation": "perf-2025031607",
+    "timestamp": "2025-03-16T07:00:00Z",
+    "environment": {
+        "cluster_type": "development",
+        "k8s_version": "1.28.5",
+        "node_count": 3,
+        "monitoring_stack": {
+            "jaeger_version": "1.52.0",
+            "otel_demo_version": "0.120.0"
+        }
+    },
+    "context": {
+        "components": [
+            {
+                "name": "jaeger",
+                "namespace": "observability",
+                "type": "all-in-one",
+                "storage": "memory"
+            },
+            {
+                "name": "frontend-proxy",
+                "namespace": "otel-demo",
+                "type": "envoy-proxy"
+            }
+        ],
+        "duration": "4h",
+        "detection": "Pod restarts and missing traces"
+    },
+    "metrics": {
+        "jaeger": {
+            "normal": {
+                "memory_usage": "512Mi",
+                "restart_count": 0,
+                "traces_stored": "~1000/hour",
+                "query_latency_p95": "200ms"
+            },
+            "degraded": {
+                "memory_usage": "1Gi (at OOM)",
+                "restart_count": 5,
+                "traces_stored": "0 (after restart)",
+                "query_latency_p95": "N/A (pod restarting)"
+            }
+        },
+        "frontend_proxy": {
+            "normal": {
+                "memory_usage": "256Mi",
+                "restart_count": 0,
+                "requests_per_second": 100,
+                "response_time_p95": "100ms"
+            },
+            "degraded": {
+                "memory_usage": "512Mi (at OOM)",
+                "restart_count": 3,
+                "requests_per_second": 0,
+                "response_time_p95": "N/A (pod restarting)"
+            }
+        },
+        "resource_limits": {
+            "jaeger": {
+                "memory_request": "512Mi",
+                "memory_limit": "1Gi"
+            },
+            "frontend_proxy": {
+                "memory_request": "256Mi",
+                "memory_limit": "512Mi"
+            }
+        }
+    },
+    "analysis": {
+        "root_cause": "Insufficient memory limits for in-memory trace storage and proxy operations",
+        "evidence": [
+            "OOMKilled events in pod descriptions",
+            "Regular pod restarts with exit code 137",
+            "Memory usage growing until limit",
+            "Loss of traces after Jaeger restarts",
+            "Service disruption during proxy restarts"
+        ],
+        "contributing_factors": [
+            "In-memory storage for Jaeger without persistence",
+            "Accumulating traces without cleanup",
+            "High concurrent load on frontend-proxy",
+            "Conservative memory limits for development environment"
+        ],
+        "impact": {
+            "observability": {
+                "trace_loss": "Complete after each restart",
+                "monitoring_gaps": "5-10 minutes per restart",
+                "affected_traces": "~1000 per restart"
+            },
+            "user_experience": {
+                "service_disruptions": "3-5 minutes per restart",
+                "failed_requests": "~500 per incident"
+            }
+        }
+    },
+    "resolution": {
+        "immediate_actions": [
+            {
+                "component": "jaeger",
+                "actions": [
+                    {
+                        "type": "Resource adjustment",
+                        "change": "Increase memory limit to 2Gi",
+                        "effect": "Reduced OOM incidents"
+                    }
+                ]
+            },
+            {
+                "component": "frontend-proxy",
+                "actions": [
+                    {
+                        "type": "Resource adjustment",
+                        "change": "Increase memory limit to 1Gi",
+                        "effect": "Stabilized proxy operation"
+                    }
+                ]
+            }
+        ],
+        "long_term_fixes": [
+            {
+                "type": "Architecture changes",
+                "changes": [
+                    "Implement persistent storage for Jaeger",
+                    "Configure trace retention policies",
+                    "Implement trace sampling"
+                ]
+            },
+            {
+                "type": "Monitoring improvements",
+                "changes": [
+                    "Add memory usage trending alerts",
+                    "Monitor pod restart frequency",
+                    "Track trace storage metrics"
+                ]
+            }
+        ],
+        "prevention": {
+            "monitoring_additions": [
+                {
+                    "metric": "container_memory_usage_bytes",
+                    "threshold": "80% of limit",
+                    "window": "5m",
+                    "action": "Alert before OOM"
+                },
+                {
+                    "metric": "kube_pod_container_status_restarts_total",
+                    "threshold": "increase(1h) > 2",
+                    "action": "Alert on frequent restarts"
+                }
+            ],
+            "documentation_updates": [
+                "Memory sizing guidelines",
+                "Trace storage best practices",
+                "Resource limit calculation methods"
+            ]
+        },
+        "validation": {
+            "success_criteria": [
+                "No OOM events in 24h",
+                "Pod restart count = 0",
+                "Memory usage < 80% of limit",
+                "All traces preserved"
+            ],
+            "monitoring_period": "72h"
+        }
+    },
+    "metadata": {
+        "label_type": "performance",
+        "severity": "high",
+        "component_type": "observability",
+        "tags": [
+            "oom-kill",
+            "memory-management",
+            "jaeger",
+            "frontend-proxy",
+            "kubernetes",
+            "resource-limits"
+        ]
+    }
+} 

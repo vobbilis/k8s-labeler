@@ -1,0 +1,44 @@
+{
+    "deployment_incident": "dep-2025031501",
+    "question": "Why is the OpenTelemetry Operator stuck in ContainerCreating state?",
+    "deployment_context": {
+        "service": "opentelemetry-operator",
+        "namespace": "opentelemetry-operator-system",
+        "pod": "opentelemetry-operator-controller-manager-6cd57b6cc-swxn2",
+        "timestamp": "2025-03-15T23:33:47Z"
+    },
+    "analysis": {
+        "status": {
+            "desired_replicas": 1,
+            "updated_replicas": 1,
+            "available_replicas": 0,
+            "unavailable_replicas": 1
+        },
+        "pod_conditions": [
+            {
+                "type": "Ready",
+                "status": "False",
+                "reason": "ContainerCreating"
+            }
+        ],
+        "events": [
+            {
+                "type": "Warning",
+                "reason": "FailedCreate",
+                "message": "Pod stuck in ContainerCreating state"
+            }
+        ]
+    },
+    "resolution": {
+        "root_cause": "Potential cert-manager dependency missing - Certificate and Issuer CRDs not found",
+        "evidence": "Error messages: resource mapping not found for Certificate and Issuer in cert-manager.io/v1",
+        "fix": "Install cert-manager before OpenTelemetry Operator"
+    },
+    "metadata": {
+        "label_type": "deployment",
+        "severity": "high",
+        "component_type": "operator",
+        "environment": "development",
+        "tags": ["opentelemetry", "operator", "deployment", "dependency", "cert-manager"]
+    }
+} 

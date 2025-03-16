@@ -1,0 +1,65 @@
+{
+    "dependency_incident": "dep-2025031504",
+    "question": "What is the correct dependency and installation order for the observability stack?",
+    "stack_context": {
+        "components": [
+            {
+                "name": "cert-manager",
+                "priority": 1,
+                "status": "Running",
+                "dependencies": []
+            },
+            {
+                "name": "prometheus-operator",
+                "priority": 2,
+                "status": "Running",
+                "dependencies": ["cert-manager"]
+            },
+            {
+                "name": "opentelemetry-operator",
+                "priority": 3,
+                "status": "Running",
+                "dependencies": ["cert-manager"]
+            },
+            {
+                "name": "jaeger-operator",
+                "priority": 4,
+                "status": "Running",
+                "dependencies": ["cert-manager"],
+                "configuration_dependencies": {
+                    "production": ["elasticsearch-operator", "persistent-storage"],
+                    "allInOne": []
+                }
+            }
+        ]
+    },
+    "analysis": {
+        "root_cause": "Incorrect installation sequence and missing dependencies",
+        "correct_sequence": [
+            "Install cert-manager and wait for ready",
+            "Install Prometheus operator and verify CRDs",
+            "Install OpenTelemetry operator and wait for CRDs",
+            "Install Jaeger operator and wait for CRDs",
+            "Deploy instances of each component"
+        ],
+        "component_requirements": {
+            "jaeger": {
+                "production": {
+                    "storage": "elasticsearch",
+                    "additional_operators": ["elasticsearch-operator"]
+                },
+                "allInOne": {
+                    "storage": "memory",
+                    "additional_operators": []
+                }
+            }
+        }
+    },
+    "metadata": {
+        "label_type": "dependencies",
+        "severity": "high",
+        "component_type": "stack",
+        "environment": "development",
+        "tags": ["dependencies", "installation-order", "operators", "observability-stack", "storage-requirements", "configuration-dependencies"]
+    }
+} 
