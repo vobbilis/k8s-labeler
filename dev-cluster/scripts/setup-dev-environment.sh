@@ -9,6 +9,7 @@ CLUSTER_NAME="k8s-labeler-dev"
 MONITORING_NAMESPACE="monitoring"
 OBSERVABILITY_NAMESPACE="observability"
 OTEL_DEMO_NAMESPACE="otel-demo"
+BOUTIQUE_NAMESPACE="boutique"
 
 # Required tool versions
 MIN_GO_VERSION="1.21"
@@ -166,7 +167,7 @@ check_required_tools() {
 check_port_availability() {
     echo "Checking port availability..."
     local errors=0
-    local ports=(3001 30686 8081)
+    local ports=(3001 30686 8081 8082)
 
     for port in "${ports[@]}"; do
         if ss -tuln | grep -q ":${port} "; then
@@ -362,7 +363,7 @@ check_status() {
 
     # Check namespace status
     echo -e "\n3. Namespace Status:"
-    local namespaces=("${MONITORING_NAMESPACE}" "${OBSERVABILITY_NAMESPACE}" "${OTEL_DEMO_NAMESPACE}")
+    local namespaces=("${MONITORING_NAMESPACE}" "${OBSERVABILITY_NAMESPACE}" "${OTEL_DEMO_NAMESPACE}" "${BOUTIQUE_NAMESPACE}")
     for ns in "${namespaces[@]}"; do
         if kubectl get namespace "${ns}" &> /dev/null; then
             echo "✅ Namespace ${ns} exists"
@@ -390,7 +391,7 @@ check_status() {
 
     # Enhanced pod status check
     echo -e "\n5. Pod Status by Namespace:"
-    local namespaces=("${MONITORING_NAMESPACE}" "${OBSERVABILITY_NAMESPACE}" "${OTEL_DEMO_NAMESPACE}")
+    local namespaces=("${MONITORING_NAMESPACE}" "${OBSERVABILITY_NAMESPACE}" "${OTEL_DEMO_NAMESPACE}" "${BOUTIQUE_NAMESPACE}")
     for ns in "${namespaces[@]}"; do
         if kubectl get namespace "${ns}" &> /dev/null; then
             echo -e "\nNamespace: ${ns}"
@@ -404,7 +405,7 @@ check_status() {
 
     # Check port forwards
     echo -e "\n6. Port Forward Status:"
-    local ports=("3001:Grafana" "30686:Jaeger" "8081:Frontend")
+    local ports=("3001:Grafana" "30686:Jaeger" "8081:Frontend" "8082:Boutique")
     for port in "${ports[@]}"; do
         local port_number="${port%%:*}"
         local service="${port#*:}"
@@ -471,6 +472,7 @@ setup_environment() {
     create_namespace "${MONITORING_NAMESPACE}"
     create_namespace "${OBSERVABILITY_NAMESPACE}"
     create_namespace "${OTEL_DEMO_NAMESPACE}"
+    create_namespace "${BOUTIQUE_NAMESPACE}"
 
     # 4. Deploy Prometheus Stack
     echo "Deploying Prometheus Stack..."
@@ -502,6 +504,7 @@ setup_environment() {
     wait_for_pods "${MONITORING_NAMESPACE}"
     wait_for_pods "${OBSERVABILITY_NAMESPACE}"
     wait_for_pods "${OTEL_DEMO_NAMESPACE}"
+    wait_for_pods "${BOUTIQUE_NAMESPACE}"
 
     # 8. Set up port forwarding
     echo "Setting up port forwarding..."
