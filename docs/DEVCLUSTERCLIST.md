@@ -276,7 +276,7 @@ dev-cluster/
     ./dev-cluster/scripts/manage-port-forwards.sh
     
     # Required SSH port forwards from local machine:
-    ssh -L 3001:localhost:3001 -L 30686:localhost:30686 -L 8081:localhost:8081 opsramp@198.18.5.150
+    ssh -L 3001:localhost:3001 -L 30686:localhost:30686 -L 8081:localhost:8081 user@<REMOTE_HOST>
     ```
   - [x] Service accessibility verified
     - Grafana UI: http://localhost:3001
